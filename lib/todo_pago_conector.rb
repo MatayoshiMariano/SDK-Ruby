@@ -25,9 +25,9 @@ class TodoPagoConector
   end
 
   def self.buildPayload(optionAuthorize)
-    @xml = "<Request>"
+    xml = "<Request>"
     optionAuthorize.each do |item|
-      @xml = @xml.concat("<")
+      xml = xml.concat("<")
                  .concat(item[0].to_s)
                  .concat(">")
                  .concat(item[1])
@@ -35,35 +35,37 @@ class TodoPagoConector
                  .concat(item[0].to_s)
                  .concat(">")
     end
-    @xml = @xml.concat("</Request>");
-    return @xml;
+    xml.concat("</Request>")
   end
   ######################################################################################
   ###Methodo publico que llama a la primera funcion del servicio SendAuthorizeRequest###
   ######################################################################################
   def sendAuthorizeRequest(options_comercio, options_operacion)
+    message = {
+                Security: options_comercio[:security],
+                Merchant: options_comercio[:MERCHANT],
+                EncodingMethod: options_comercio[:EncodingMethod],
+                URL_OK: options_comercio[:URL_OK],
+                URL_ERROR: options_comercio[:URL_ERROR],
+                Payload: TodoPagoConector.buildPayload(options_operacion)
+              }
 
-    message = {Security: options_comercio[:security],
-               Merchant: options_comercio[:MERCHANT],
-               EncodingMethod: options_comercio[:EncodingMethod],
-               Payload: TodoPagoConector.buildPayload(options_operacion)};
-
-    client = TodoPagoConector.getClientSoap($j_wsdls['Authorize'],'Authorize');
-    response = client.call(:send_authorize_request, message: message)
-    return response.hash
+    client = TodoPagoConector.getClientSoap($j_wsdls['Authorize'],'Authorize')
+    client.call(:send_authorize_request, message: message).hash
   end
   #####################################################################################
   ###Methodo publico que llama a la segunda funcion del servicio GetAuthorizeRequest###
   #####################################################################################
   def getAuthorizeRequest(optionsAnwser)
-    message = {Security: optionsAnwser[:security],
-               Merchant: optionsAnwser[:MERCHANT],
-               RequestKey: optionsAnwser[:RequestKey],
-               AnswerKey: optionsAnwser[:AnswerKey]};
+    message = {
+                Security: optionsAnwser[:security],
+                Merchant: optionsAnwser[:MERCHANT],
+                RequestKey: optionsAnwser[:RequestKey],
+                AnswerKey: optionsAnwser[:AnswerKey]
+              }
 
     client = TodoPagoConector.getClientSoap($j_wsdls['Authorize'],'Authorize')
-    response= client.call(:get_authorize_answer,message:message)
-    return response.hash
+    client.call(:get_authorize_answer, message: message).hash
   end
 
   ############################################################
@@ -71,15 +73,13 @@ class TodoPagoConector
   ############################################################
   def getOperations(optionsOperations)
     url = $j_wsdls['Services'] + 'api/Operations/GetByOperationId/MERCHANT/' + optionsOperations[:MERCHANT] + '/OPERATIONID/' + optionsOperations[:OPERATIONID]
-	xml = RestClient.get url
-	return xml
+	  RestClient.get url
   end
   ################################################################
   ###Methodo publico que descubre todas las promociones de pago###
   ################################################################
   def getAllPaymentMethods(optionsPaymentMethod)
-	url = $j_wsdls['Services'] + 'api/PaymentMethods/Get/MERCHANT/' + optionsPaymentMethod[:MERCHANT]
-	xml = RestClient.get url
-    return xml
+  	url = $j_wsdls['Services'] + 'api/PaymentMethods/Get/MERCHANT/' + optionsPaymentMethod[:MERCHANT]
+  	RestClient.get url
   end
 end
